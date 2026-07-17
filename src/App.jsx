@@ -866,6 +866,7 @@ const inputStyle = {
   border: "1px solid rgba(43,38,32,0.4)",
   borderRadius: 6,
   background: "#fff",
+  color: "#2B2620",
   fontFamily: "'Inter', sans-serif",
   fontSize: 14,
   boxSizing: "border-box",
