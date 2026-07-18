@@ -155,11 +155,43 @@ export default function RopaTracker() {
       return { ...c, abonos, pagado: totalAbonado >= c.monto };
     });
     persistCreditos(next);
+    
+    // --- NUEVO: Generar venta automática por el abono ---
+    const creditoInfo = creditos.find((c) => c.id === id);
+    const nuevaVenta = {
+      id: uid(),
+      type: "venta",
+      fecha: todayISO(),
+      descripcion: `Abono fiado: ${creditoInfo.nombre}`,
+      monto: montoAbono,
+      costo: 0, // No se le pone costo porque ya es un abono líquido
+      canal: "Otro"
+    };
+    persist([nuevaVenta, ...entries]);
   }
 
   function marcarPagado(id) {
     const next = creditos.map((c) => (c.id === id ? { ...c, pagado: true } : c));
     persistCreditos(next);
+
+    // --- NUEVO: Generar venta automática por el saldo restante ---
+    const creditoInfo = creditos.find((c) => c.id === id);
+    const abonado = creditoInfo.abonos.reduce((s, a) => s + a.monto, 0);
+    const saldoRestante = Math.max(0, creditoInfo.monto - abonado);
+    
+    // Solo crea el registro si quedaba plata por pagar
+    if (saldoRestante > 0) {
+      const nuevaVenta = {
+        id: uid(),
+        type: "venta",
+        fecha: todayISO(),
+        descripcion: `Pago total fiado: ${creditoInfo.nombre}`,
+        monto: saldoRestante,
+        costo: 0,
+        canal: "Otro"
+      };
+      persist([nuevaVenta, ...entries]);
+    }
   }
 
   function eliminarCredito(id) {
